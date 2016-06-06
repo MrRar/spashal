@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta charset="utf-8">
+    <title>Spashal</title>
+    <link rel="shortcut icon" href="images/fav.png">
+    <meta name="author" content="Mr. Rar">
+    <meta name="keywords" content="retro, space, spashal, alien, game, canvas">
+    <meta name="description" content="SPASHAL the original game">
+    <meta name="theme-color" content="black">
+    <style>
+        
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        #logo {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        
+        header {
+            background: black;
+            visibility: hidden;
+            height: 40px;
+            overflow: hidden;
+        }
+        
+        marquee {
+            display: inline-block;
+            float: left;
+            font-size: 20pt;
+            color: white;
+        }
+        button,
+        a {
+            cursor: pointer;
+        }
+        
+        button {
+            background: black;
+            color: white;
+            height: 40px;
+            float: right;
+            font-family: avg;
+            font-size: 12pt;
+            border: none;
+        }
+        
+        html,
+        body {
+            font-family: "avg";
+            border: 0;
+            padding: 0;
+            margin:0;
+            background: black;
+            cursor: url(images/mousecursor.png), auto;
+        }
+        
+        @font-face {
+            font-family: avg;
+            src: url(images/Uniavg16.ttf);
+        }
+        
+        canvas{
+            image-rendering: pixelated;
+            margin: 0;
+            padding: 0;
+            float: right;
+        }
+        
+        .screen3 {
+            cursor: crosshair;/* for IE */
+            cursor: url(images/crosshair.png) 8 8, auto;
+        }
+                
+        #noSupport {
+            color: white;
+            margin-top: 30%;
+            width: 100%;
+            text-align: center;
+            display: inline-block;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <audio id="SC1" src="images/Star%20Commander1.mp3" style="display:none" loop></audio>
+    <audio id="clickSound" src="images/SOUND16.WAV" style="display:none"></audio>
+    <audio id="explosionSound" src="images/explosion.mp3" style="display:none"></audio>
+    <audio id="shotSound" src="images/SOUND49D.mp3" style="display:none"></audio>
+    <audio id="engineFail" src="images/engineFail.wav" style="display:none"></audio>
+    <audio id="intro" src="images/Androids.mp3" style="display:none" autoplay loop></audio>
+    <header>
+        <marquee truespeed="true" scrolldelay="60">Keyboard shortcuts: P=pause M=menu S=screen-shot F=full-screen</marquee>
+        <button id="menuButton">MAIN-MENU</button>
+        <button id="pausePlay">PAUSE</button>
+        <button id="fsButton">FULL-SCREEN</button>
+        <button id="ssButton">SCREEN-SHOT</button>
+    </header>
+    <img id="logo" src="images/logo.gif" width="100%" />
+    <canvas>
+        <h1 id="noSupport">Your browser does not support html5 canvas.</h1>
+    </canvas>
+    <script>
+//////////////////////////////////////////////////////////////////////////////////////////game input
+var touch={startX:0,startY:0,x:0,y:0};
+var click={x:0,y:0};
+
+document.getElementById("menuButton").onclick = function () {
+	this.blur();
+	buttonSound();
+    screen1();
+}
+document.getElementById("pausePlay").onclick = function () {
+	this.blur();
+	buttonSound();
+	if(screen = 3) pausePlay();
+}
+document.getElementById("fsButton").onclick = function () {
+	this.blur();
+	buttonSound();
+	fullScreen();
+}
+document.getElementById("ssButton").onclick = function () {
+	this.blur();
+	buttonSound();
+	download();
+}
+var keysDown = {};
+//key down
+addEventListener("keydown", function (e) {
+    switch(screen){
+        case 3:
+	    switch(e.keyCode){
+	    case 80: case 179: pausePlay(); break;
+	    case 70: fullScreen(); break;
+	    case 77: screen1(); break;
+	    default :keysDown[e.keyCode] = true;
+        break;
+	    }
+    }
+}, true);
+//key up
+addEventListener("keyup", function (e) {
+	delete keysDown[e.keyCode];
+}, true);
+// contextmenu
+//document.addEventListener("contextmenu", function(e) {e.preventDefault();}, true);
+//touch start
+document.querySelector("canvas").addEventListener("touchstart",  function(e) {
+	e.preventDefault();
+    switch(screen){
+        case 1:
+            buttonSound();
+		    screen = 2;
+		    screen2();
+        break;
+        case 3:
+	    var x = e.changedTouches[0].clientX;
+	    var y = e.changedTouches[0].clientY-50;
+	    var bx = canvas.width-175;
+	    var by = canvas.height-100;
+	    var rx = canvas.width-100;
+	    var ry = canvas.height-100;
+	    var button = false;
+	    if(x <= (bx + 75)&& x >= bx&& y <= (by + 75)&& y >= by){//shield
+	        button = true;
+	        keysDown[32] = true;
+		}
+	    if(x <= (rx + 75)&& x >= rx&& y <= (ry + 75)&& y >= ry){//shoot
+	        button=true;
+		}
+	    if(!button){
+	        nav.x = x-75;
+	        nav.y = y-75;
+	        nav.isVisible = true;
+	    }
+        break;
+    }
+}, true);
+//touch move
+document.querySelector("canvas").addEventListener("touchmove", function(e) {
+    e.preventDefault();
+    switch(screen){
+        case 3:
+	    var x = e.changedTouches[0].clientX;
+	    var y = e.changedTouches[0].clientY-50;
+	    var bx = canvas.width-175;
+	    var by = canvas.height-100;
+	    var rx = canvas.width-100;
+	    var ry = canvas.height-100;
+	    var button = false;
+	    if(x <= (bx + 75)&& x >= bx&& y <= (by + 75)&& y >= by){//shield
+	        button = true;
+		}
+	    if(x <= (rx + 75)&& x >= rx&& y <= (ry + 75)&& y >= ry){//shoot
+	        button = true;
+		}
+		if(!button){
+			if(x-nav.x<50){
+				keysDown[65] = true;
+				delete keysDown[68];
+			}
+			else if(x-nav.x>100){
+				keysDown[68] = true;
+				delete keysDown[65];
+			}
+			if(x-nav.x>50 && x-nav.x<100){
+				delete keysDown[65];
+				delete keysDown[68];	
+			}
+			if(y-nav.y<50){
+				keysDown[87] = true;
+				delete keysDown[83];
+			}
+			else if(y-nav.y>100){
+				keysDown[83] = true;
+				delete keysDown[87];
+			}
+			if(y-nav.y<100 && y-nav.y>50)
+			{
+				delete keysDown[87];
+				delete keysDown[83];	
+			}
+        }
+        break;
+	}
+}, true);
+//touch end
+document.querySelector("canvas").addEventListener("touchend", function(e){
+	e.preventDefault();
+    switch(screen){
+        case 3:
+	    var x = e.changedTouches[0].clientX;
+	    var y = e.changedTouches[0].clientY-50;
+	    var bx = canvas.width-175;
+	    var by = canvas.height-100;
+	    var rx = canvas.width-100;
+	    var ry = canvas.height-100;
+	    var button = false;
+	    if(x <= (bx + 75)&& x >= bx&& y <= (by + 75)&& y >= by){//shield
+		    button = true;
+		    delete keysDown[32];
+	    }
+	    if(x <= (rx + 75)&& x >= rx&& y <= (ry + 75)&& y >= ry){//shoot
+		    button = true;
+		    autoShoot();
+	    }
+	    if(!button){
+			delete keysDown[68];
+			delete keysDown[65];
+			delete keysDown[83];
+			delete keysDown[87];
+			nav.isVisible = false;
+		}
+        break;
+        case 4:
+		buttonSound();
+        screen2();
+        break;
+    }
+}, true);
+	document.body.onresize=function(){
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight-40;
+		marquee.style.width = (window.innerWidth-380)+"px";
+		widthFactor = canvas.width*0.001;
+	}
+document.querySelector("canvas").addEventListener("click", function(event) {
+    switch(screen){
+        case 1:
+            buttonSound();
+		    screen2();
+        break;
+        case 3:
+	    if((!paused) && hero.shots){//hero shoots
+		    shotSound();
+	        var s = hShots.length;
+            hShots[s] = {};
+            hShots[s].x = hero.x+13;
+            hShots[s].y = hero.y+2;
+		    var x = event.clientX;
+		    var y = event.clientY-50;
+	        var speed = 300*widthFactor;
+            var denom = (Math.sqrt((hShots[s].x-x)*(hShots[s].x-x)+(hShots[s].y-y)*(hShots[s].y-y))/speed);
+            hShots[s].movementX = (x-hShots[s].x)/denom;
+            hShots[s].movementY = (y+8-hShots[s].y)/denom;
+		    hero.shots--;
+	    }
+        break;
+        case 4:
+		buttonSound();
+        screen2();
+        break;
+    }
+}, true);
+var paused = false;
+var loadedItems=0;
+var canvas = document.querySelector("canvas");
+var ctx = canvas.getContext("2d");
+var marquee = document.querySelector("marquee");
+marquee.style.width = (window.innerWidth-380)+"px";
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight-40;
+var mobile = false;
+if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMoble|WindowsPhone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)) {
+	mobile = true;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////load game graphics
+
+// nav image
+var navImage = new Image();
+navImage.onload = function () {loadedItems++;};
+navImage.src = "images/nav.png";
+
+// shot images
+var hShotImage = new Image();
+hShotImage.onload = function () {loadedItems++;};
+hShotImage.src = "images/hShot.png";
+var mShotImage = new Image();
+mShotImage.onload = function () {loadedItems++;};
+mShotImage.src = "images/mShot.png";
+
+// Background image
+var bgImage = new Image();
+bgImage.onload = function () {loadedItems++;screen1();};
+bgImage.src = "images/background.jpg";
+
+// Hero images
+var heroImage =[];
+for(var i=0; i<3; i++) {
+	heroImage[i] = new Image();
+	heroImage[i].onload = function () {loadedItems++;};
+	heroImage[i].src = "images/hero"+i+".png";
+}
+// Monster images
+var monsterImage=[];
+for(var i=0; i<11; i++) {
+    monsterImage[i] = new Image();
+    monsterImage[i].onload = function () {loadedItems++;};
+    monsterImage[i].src = "images/monster"+i+".png";
+}
+
+// Game objects and arrays
+var mShots=[];
+var hShots = [];
+var modifier;
+var shield = 196;
+var hero = {speed: 200, isDieing: false, image:0, shots:0};
+var nav = {isVisible: false, x:0, y:0};
+var monsters = [];
+var introMonsters = [];
+var monstersCaught = 0;
+var widthFactor = canvas.width*0.001;
+
+// init high score
+if(!getItem("highScore")) {highScore = 0;}
+else highScore = getItem("highScore");
+var debug;
+///////////////////////////////////////////////////////////////////////////////////////////////////////// new monster
+function monsterIntro(){
+    var i = introMonsters.length;
+	var destX = (Math.random() * (canvas.width - 64));
+	var destY = (Math.random() * (canvas.height - 64));
+    var x, y;
+    var speed = 1000*widthFactor;
+	while((destX+90)>hero.x && destX < (hero.x+90) && (destY+90)>hero.y && destY < (hero.y+90) ){
+		destX = (Math.random() * (canvas.width - 64));
+		destY = (Math.random() * (canvas.height - 64));
+	}
+    if(destX < (canvas.width*0.5)) x = 0;
+    else x = canvas.width-64;
+    if(destY < (canvas.height*0.5)) y = 0;
+    else y = canvas.height-64;
+	introMonsters[i] = {};
+	introMonsters[i].destX = destX;
+	introMonsters[i].destY = destY;
+    introMonsters[i].x = x;
+    introMonsters[i].y = y;
+    introMonsters[i].movementX = (destX+32-x)/(Math.sqrt((x-destX+32)*(x-destX+32)+(y-destY+32)*(y-destY+32))/speed);
+    introMonsters[i].movementY = (destY+32-y)/(Math.sqrt((x-destX+32)*(x-destX+32)+(y-destY+32)*(y-destY+32))/speed);
+	introMonsters[i].image=Math.floor((Math.random() * 2));
+    debug = introMonsters[i];
+}
+setInterval(monsterAddIn,4000);
+function monsterAddIn(){
+	if(!paused && screen == 3) monsterIntro();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////// Update game objects
+var RAN=0, wavingHand=0, explosion=0, chance = 1;
+function update() {
+	//frames++;
+	switch(hero.image){
+		case 0:
+		shield+=100*modifier;
+		if(shield > 196)shield = 196
+		break;
+		case 1:
+		shield-=50*modifier;
+		if(shield<=0){ delete keysDown[32]; shield = 0; }
+		break;
+	}
+	if(hero.image !== 2) { //hero image 2 is of hero falling. Moving is disabled in this mode.
+		if (87 in keysDown) { // Player holding up
+			hero.y -= hero.speed * modifier*widthFactor;
+		}
+		if (83 in keysDown) { // Player holding down
+			hero.y += hero.speed * modifier*widthFactor;
+		}
+		if (65 in keysDown) { // Player holding left
+			hero.x -= hero.speed * modifier*widthFactor;
+		}
+		if (68 in keysDown) { // Player holding right
+			hero.x += hero.speed * modifier*widthFactor;
+		}
+		if (32 in keysDown) {
+			hero.image = 1;
+		}
+		else{
+			hero.image = 0;
+		}
+		//hero.y+=touch.y*1.5*modifier;
+		//hero.x+=touch.x*1.5*modifier;
+		if(hero.x > canvas.width-64)hero.x=canvas.width-64;
+		if(hero.x < 0)hero.x=0;
+		if(hero.y > canvas.height-64)hero.y=canvas.height-64;
+		if(hero.y < 0)hero.y=0;
+	}
+	else{
+		if(hero.y > canvas.height) screen4(); //Depressing, I know.
+		hero.y+=400*modifier;
+	}
+	for(i in mShots){
+        mShots[i].y += mShots[i].movementY*modifier;
+        mShots[i].x += mShots[i].movementX*modifier;
+        if(mShots[i].x > canvas.width-2 || mShots[i].x < -2 || mShots[i].y > canvas.height-2 || mShots[i].y < -2){
+            mShots.splice(i,1);
+        }
+		else if(hero.x<mShots[i].x+2 && hero.x+64>mShots[i].x+2 && hero.y<mShots[i].y+2 && hero.y+64>mShots[i].y+2){
+			if(hero.image){// hero image 1 is the sheild
+				hero.shots++;
+				mShots.splice(i,1);
+			}
+			else{// hero image 0 is not the sheild
+				EFsound();
+				mShots.splice(i,1);
+				hero.image = 2;
+			}
+		}
+    }
+	for(i in hShots){
+        hShots[i].y += hShots[i].movementY*modifier;
+        hShots[i].x += hShots[i].movementX*modifier;
+        if(hShots[i].x > canvas.width-2 || hShots[i].x < -2 || hShots[i].y > canvas.height-2 || hShots[i].y < -2 ){
+            hShots.splice(i,1);
+        }
+    }
+	/////////////////////////////////////////////////////////////////////////////////////////handle monsters
+    for(var i in introMonsters){
+        introMonsters[i].x += introMonsters[i].movementX*modifier;
+        introMonsters[i].y += introMonsters[i].movementY*modifier;
+        if(introMonsters[i].x<=introMonsters[i].destX+40 && introMonsters[i].x>=introMonsters[i].destX-40){
+            var monster = introMonsters[i];
+            introMonsters.splice(i,1);
+            var n = monsters.length;
+            monsters[n] = {};
+            monsters[n].shoot = Math.floor((Math.random() * 2))==1? true : false;
+            monsters[n].x = monster.x;
+            monsters[n].y = monster.y;
+            monsters[n].movementY=((Math.random() * 200)-99);
+	        monsters[n].movementX=((Math.random() * 200)-99);
+            monsters[n].image = monster.image;
+        }
+    }
+	chance-=(0.0000000000023*modifier);
+	if(Math.random()>chance) monsterIntro(); 
+	wavingHand+=modifier;
+	if(wavingHand>0.05) {wavingHand = 0;}
+	explosion+=modifier;
+	if(explosion>0.03) {explosion = 0;}
+	for(i in monsters){
+        if(monsters[i].shoot){
+            if(Math.random() > 0.994){
+                var s = mShots.length;
+                mShots[s] = {};
+                mShots[s].x = monsters[i].x+47;
+                mShots[s].y = monsters[i].y+2;
+	            var speed = 100*widthFactor;
+                var denom = Math.sqrt((mShots[s].x-hero.x+32)*(mShots[s].x-hero.x+32)+(mShots[s].y-hero.y+32)*(mShots[s].y-hero.y+32))/speed;
+                mShots[s].movementX = (hero.x+32-mShots[s].x)/denom;
+                mShots[s].movementY = (hero.y+32-mShots[s].y)/denom;
+	        }
+	        // where is the moster going?
+	        if(Math.random()>0.95){ // if true the monster will change direction
+		        monsters[i].movementY=((Math.random() * 200)-99)*widthFactor;
+		        monsters[i].movementX=((Math.random() * 200)-99)*widthFactor;
+	        }
+        } else {
+            var speed = 120*widthFactor;
+            var x = monsters[i].x
+            var y = monsters[i].y
+            var denom = Math.sqrt((x-hero.x+32)*(x-hero.x+32)+(y-hero.y+32)*(y-hero.y+32))/speed;
+            monsters[i].movementX = (hero.x+32-x)/denom;
+            monsters[i].movementY = (hero.y+32-y)/denom;    
+        }
+	    // move the monster
+	    monsters[i].x += monsters[i].movementX*modifier;
+	    monsters[i].y += monsters[i].movementY*modifier;
+	    // stay in bounds
+	    if(monsters[i].x > canvas.width-64)monsters[i].x=canvas.width-64;
+	    if(monsters[i].x < 0)monsters[i].x=0;
+	    if(monsters[i].y > canvas.height-64)monsters[i].y=canvas.height-64;
+	    if(monsters[i].y < 0)monsters[i].y=0;
+	    for(n in hShots){
+		    if(monsters[i].x<hShots[n].x+2 && monsters[i].x+64>hShots[n].x+2 && monsters[i].y<hShots[n].y+2 && monsters[i].y+64>hShots[n].y+2 && monsters[i].image < 2){
+                hero.shots++;
+		        ++monstersCaught;
+		        explosionSound();
+		        monsters[i].image = 2;
+		        hShots.splice(n,1);
+		    }
+	    }
+	    // are the hero and monster touching?
+	    if (hero.x <= (monsters[i].x + 64)&& monsters[i].x <= (hero.x + 64)&& hero.y <= (monsters[i].y + 64)&& monsters[i].y <= (hero.y + 64)&&monsters[i].image<2) {
+		    explosionSound();
+		    monstersCaught++;
+            hero.shots++;
+		    monsters[i].image = 2;
+		    if(!hero.image){
+			    hero.image = 2;
+		    }
+	    }
+	    if(monsters[i].image > 1){
+		    //exploding
+		    if(!explosion){
+		        monsters[i].image++;
+		        if(monsters[i].image == 11){
+			        monsters.splice(i,1);
+		        }
+		    }
+	    }
+	    else if(!wavingHand){
+		    //waving arms
+		    if (monsters[i].image == 1) monsters[i].image = 0;
+		    else monsters[i].image = 1;
+	    }
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////// Draw everything
+function render() {
+    ctx.drawImage(bgImage, 0, 0);
+	ctx.drawImage(heroImage[hero.image], Math.round(hero.x), Math.round(hero.y));
+    var i = -1;
+    for(i in introMonsters){
+		ctx.drawImage(monsterImage[introMonsters[i].image], Math.round(introMonsters[i].x), Math.round(introMonsters[i].y));
+	}
+	for(i in monsters){
+		ctx.drawImage(monsterImage[monsters[i].image], Math.round(monsters[i].x), Math.round(monsters[i].y));
+	}
+    for(i in mShots){
+        ctx.drawImage(mShotImage, Math.round(mShots[i].x), Math.round(mShots[i].y));
+    }
+    for(i in hShots){
+        ctx.drawImage(hShotImage, Math.round(hShots[i].x), Math.round(hShots[i].y));
+    }
+	// Score
+	ctx.fillStyle = '#FFF';
+	ctx.font = "24px avg";
+	ctx.textAlign = "left";
+	ctx.textBaseline = "top";
+	ctx.fillText(" ammo:"+hero.shots+" score: "+monstersCaught, 32, 64);
+  	ctx.fillRect(32,32,200,16);
+  	ctx.fillStyle = '#00F';
+  	ctx.fillRect(34,34,shield,12); // max is 196
+    if(mobile){
+        ctx.fillStyle = '#F00';
+        ctx.fillRect(canvas.width-100,canvas.height-100,75,75);
+        ctx.fillStyle = '#00F';
+        ctx.fillRect(canvas.width-175,canvas.height-100,75,75);
+        if(nav.isVisible){
+		    ctx.drawImage(navImage, nav.x, nav.y);
+	    }
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////// screen loops
+var bgX=0, bgY=0, phase=1, screen=1, then = 0.001;
+
+// Cross-browser support for requestAnimationFrame
+var w = window;
+requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
+
+function screen1(){
+    document.querySelector("canvas").setAttribute("class","");
+    document.querySelector("header").style.visibility = "hidden";
+    document.getElementById('logo').setAttribute("width","100%");
+	document.getElementById("SC1").pause();
+    document.getElementById("intro").play();
+	if(document.getElementById("SC1").currentTime) document.getElementById("SC1").currentTime = 0;
+	
+    screen=1;
+	screen1loop();
+}
+
+function screen1loop() {
+	var maxY = canvas.height-2000;
+	var maxX = canvas.width-2000;
+	switch(phase){
+        case 1:
+	    bgX--;
+	    ctx.drawImage(bgImage, bgX, bgY);
+	    if(bgX<=maxX) phase=2;
+	    break;
+        
+        case 2:
+	    bgY--;
+	    ctx.drawImage(bgImage, bgX, bgY);
+        if(bgY<=maxY) phase=3;
+	    break;
+        
+        case 3:
+        bgX++;
+	    ctx.drawImage(bgImage, bgX, bgY);
+	    if(bgX>=0) phase=4;
+	    break;
+        
+        case 4:
+	    bgY++;
+	    ctx.drawImage(bgImage, bgX, bgY);
+	    if(bgY>=0) phase=1;
+	    break;
+	}
+    var score = "high score: "+highScore;
+    score.length*canvas.width*0.006;
+	ctx.fillStyle = '#FFF';
+    ctx.font = canvas.width*0.03+"px avg";
+    ctx.fillText(score, canvas.width*0.5-score.length*canvas.width*0.0075, canvas.height*0.7);
+	ctx.fillRect(canvas.width*0.4, canvas.height*0.4, canvas.width*0.2, canvas.width*0.1);
+	ctx.fillStyle = '#000';
+	ctx.font = canvas.width*0.1+"px avg";
+	ctx.textAlign = "left";
+	ctx.textBaseline = "top";
+	ctx.fillText("PLAY", canvas.width*0.402, canvas.height*0.407);
+    if(screen == 1) requestAnimationFrame(screen1loop);
+}
+
+function screen2()  {
+	paused = false;
+	screen = 2;
+	notify("Keyboard shortcuts: P=pause M=menu S=screen-shot F=full-screen");
+    document.getElementById("logo").width= "0px";
+    document.querySelector("header").style.visibility = "visible";
+	screen2loop();
+}
+
+function screen2loop(){
+	if(loadedItems == 18) { // check if all items are loaded
+		screen3();
+	}
+	else{ // if items still need to load wait for them to load
+		ctx.drawImage(bgImage,0,0);
+		ctx.fillStyle = "rgb(250, 250, 250)";
+		ctx.font = "24px avg";
+		ctx.textAlign = "left";
+		ctx.textBaseline = "top";
+		ctx.fillText(18-loadedItems+" things left to load", canvas.width/2-130, canvas.height/2-40);
+		requestAnimationFrame(screen2loop);
+	}
+}
+
+function screen3() {
+    // music change
+    document.getElementById("intro").pause();
+	document.getElementById("intro").currentTime = 0;
+    document.getElementById("SC1").play();
+    canvas.setAttribute("class","screen3"); // changes cursor to cross hairs
+    
+    // reset all game data
+    screen = 3;
+	chance = 1;
+	hero.x = canvas.width / 2-32;
+	hero.y = canvas.height / 2-32;
+    hero.image = 0;
+	hero.isDieing = false;
+    hero.shots = 0;
+    monstersCaught = 0;
+	hShots = [];
+	mShots = [];
+	monsters = [];
+    
+    screen3loop();
+}
+
+function screen3loop() {
+	var now = Date.now();
+	var delta = now - then;
+    modifier = delta / 1000;
+	update();
+	render();
+
+	then = now;
+
+	// Request to do this again ASAP
+	if (!paused && screen == 3) { requestAnimationFrame(screen3loop); }
+}
+
+function screen4(){
+	screen = 4;
+    canvas.setAttribute("class","");
+	notify("Better luck next time.");
+    endScore = monstersCaught;
+	if(highScore < monstersCaught){
+		setItem("highScore",monstersCaught);
+		highScore= monstersCaught;
+		endScore +="  NEW high score!";
+	}
+	screen4loop();
+}
+
+var endScore;
+function screen4loop(){
+	if(screen == 4){
+		var textSize = canvas.width*0.1;
+		var textWidth = textSize*5;
+		ctx.textAlign = "left";
+		ctx.textBaseline = "top";
+		ctx.drawImage(bgImage, 0, 0);
+		ctx.fillStyle = "white";
+		ctx.font = textSize+"px avg";
+		ctx.fillText("GAME OVER", (canvas.width-textWidth)*0.55, (canvas.height-textSize)*0.4);
+        ctx.font = textSize*0.4+"px avg";
+		ctx.textBaseline = "bottom";
+		ctx.fillText("end score: "+endScore, 32, canvas.height-32);
+        ctx.fillRect(canvas.width*0.36, canvas.height*0.7, canvas.width*0.27, canvas.width*0.05);
+        ctx.fillStyle = "black";
+        ctx.font = canvas.width*0.05+"px avg";
+        ctx.textBaseline = "top";
+        ctx.fillText("play again", canvas.width*0.37, canvas.height*0.7);
+		requestAnimationFrame(screen4loop);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////// resource functions
+
+function download() { // screen shot
+    /// create an "off-screen" anchor tag
+    var lnk = document.createElement('a'), e;
+
+    /// the key here is to set the download attribute of the a tag
+    lnk.download = "SpashalScreenShot.png";
+
+    /// convert canvas content to data-uri for link. When download
+    /// attribute is set the content pointed to by link will be
+    /// pushed as "download" in HTML5 capable browsers
+    lnk.href = canvas.toDataURL();
+
+    /// create a fake click-event to trigger the download
+    if (document.createEvent) {
+
+        e = document.createEvent("MouseEvents");
+        e.initMouseEvent("click", true, true, window,
+                         0, 0, 0, 0, 0, false, false, false,
+                         false, 0, null);
+
+        lnk.dispatchEvent(e);
+
+    } else if (lnk.fireEvent) {
+
+        lnk.fireEvent("onclick");
+    }
+}
+
+function fullScreen() { // fullscreen
+	if (canvas.requestFullscreen) {
+		canvas.requestFullscreen();
+	} else if (canvas.webkitRequestFullscreen) {
+		canvas.webkitRequestFullscreen();
+	} else if (canvas.mozRequestFullScreen) {
+		canvas.mozRequestFullScreen();
+	} else if (canvas.msRequestFullscreen) {
+		canvas.msRequestFullscreen();
+	}
+}
+
+//play sounds
+function buttonSound(){document.getElementById("clickSound").play();}
+function explosionSound(){
+	document.getElementById("explosionSound").currentTime = 0;
+	document.getElementById("explosionSound").play();
+}
+function shotSound(){
+	if(document.getElementById("shotSound").currentTime)document.getElementById("shotSound").currentTime = 0;
+	document.getElementById("shotSound").play();
+}
+function EFsound(){
+	document.getElementById("engineFail").play();
+}
+
+function pausePlay() { // play/pause
+	if(paused) {
+		notify("Keyboard shortcuts: P=pause M=menu S=screen shot F= full-screen");
+		paused=false;
+        then = Date.now();
+		screen3loop();
+		document.getElementById("pausePlay").innerHTML="PAUSE";
+	}
+	else{
+		notify("Spashal is paused. To unpause press the play button or press P on your keyboard.");
+        TML="PLAY"; 
+		paused=true;
+	}
+}
+
+function notify(p){ // notifications
+	document.querySelector("marquee").innerHTML = p;
+}
+
+function autoShoot(){ // auto shoot used for mobile
+		if(!paused && hero.shots){
+		var m = undefined;
+		var nearest = 10000;
+		for(i in monsters){
+			var dis = Math.abs(hero.x-monsters[i].x)+Math.abs(hero.x-monsters[i].x);
+			if(dis < nearest) {m =i; nearest=dis;}
+			}
+			if(m != undefined){
+		shotSound();
+	    var s = hShots.length;
+        hShots[s] = {};
+        hShots[s].x = hero.x+13;
+        hShots[s].y = hero.y+2;
+		var x = monsters[m].x+32;
+		var y = monsters[m].y+32;
+	    var speed = 350*widthFactor;
+        var denom = (Math.sqrt((hShots[s].x-x)*(hShots[s].x-x)+(hShots[s].y-y)*(hShots[s].y-y))/speed);
+        hShots[s].movementX = (x-hShots[s].x)/denom;
+        hShots[s].movementY = (y+8-hShots[s].y)/denom;
+		hero.shots--;
+		}
+	}
+}
+
+function getItem(item){ // get item
+	if(localStorage){
+		return localStorage.getItem(item);
+	}
+	else return "";
+    /**
+     *Bellow code used in chrome app
+     */
+    //    chrome.storage.sync.get(item, function(items) {
+	//	if(items.highScore) highScore = items.highScore;
+	//	});
+}
+
+function setItem(item, val){ // set item
+	if(localStorage){
+		localStorage.setItem(item, val);
+	}
+    /**
+     *Bellow code used in chrome app
+     */
+    //chrome.storage.sync.set({"highScore": val}, function() {});
+}
+
+function getCookie(c_name){ // cookie function (no longer in use)
+	if (document.cookie.length>0){
+    var c_start = document.cookie.indexOf(c_name + "=");
+    	if( c_start != -1 ){ 
+			c_start = c_start + c_name.length + 1; 
+			var c_end = document.cookie.indexOf( ";", c_start );
+			if( c_end == -1 ){
+				c_end = document.cookie.length;
+			}
+			return unescape( document.cookie.substring( c_start, c_end ) );
+		} 
+	}
+	return "";
+}
+</script>
+</body>
+</html>
