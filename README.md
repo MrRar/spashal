@@ -1,4 +1,4 @@
-[logo]: https://raw.githubusercontent.com/MrRar/spashal/master/images/logo.gif
+![alt text](https://raw.githubusercontent.com/MrRar/spashal/master/images/logo.gif "Spashal")
 ## [PRESS HERE TO PLAY](mrrar.github.io/spashal)
 ## controls
 ### for desktop:
