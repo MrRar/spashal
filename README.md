@@ -1,4 +1,4 @@
-[logo]: http://github.com/mrrar/spashal/images/logo.gif
+[logo]: https://raw.githubusercontent.com/MrRar/spashal/master/images/logo.gif
 ## [PRESS HERE TO PLAY](mrrar.github.io/spashal)
 ## controls
 ### for desktop:
