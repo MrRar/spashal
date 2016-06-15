@@ -100,7 +100,7 @@
     <audio id="engineFail" src="images/engineFail.wav" style="display:none"></audio>
     <audio id="intro" src="images/Androids.mp3" style="display:none" autoplay loop></audio>
     <header>
-        <marquee truespeed="true" scrolldelay="60">Keyboard shortcuts: P=pause M=menu S=screen-shot F=full-screen</marquee>
+        <marquee truespeed="true" scrolldelay="60">Keyboard shortcuts: P=pause M=menu Q=screen-shot F=full-screen</marquee>
         <button id="menuButton">MAIN-MENU</button>
         <button id="pausePlay">PAUSE</button>
         <button id="fsButton">FULL-SCREEN</button>
@@ -142,6 +142,7 @@ addEventListener("keydown", function (e) {
         case 3:
 	    switch(e.keyCode){
 	    case 80: case 179: pausePlay(); break;
+        case 81: download(); break;
 	    case 70: fullScreen(); break;
 	    case 77: screen1(); break;
 	    default :keysDown[e.keyCode] = true;
@@ -656,7 +657,7 @@ function screen1loop() {
 function screen2()  {
 	paused = false;
 	screen = 2;
-	notify("Keyboard shortcuts: P=pause M=menu S=screen-shot F=full-screen");
+	notify("Keyboard shortcuts: P=pause M=menu Q=screen-shot F=full-screen");
     document.getElementById("logo").width= "0px";
     document.querySelector("header").style.visibility = "visible";
 	screen2loop();
