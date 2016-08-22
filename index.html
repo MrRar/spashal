@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
@@ -111,9 +111,13 @@
         <h1 id="noSupport">Your browser does not support html5 canvas.</h1>
     </canvas>
     <script>
+"use strict";
+// TODO add spaces bettween oprators
 //////////////////////////////////////////////////////////////////////////////////////////game input
 var touch={startX:0,startY:0,x:0,y:0};
 var click={x:0,y:0};
+var highScore = 0;
+var fullScreen = false;
 
 document.getElementById("menuButton").onclick = function () {
 	this.blur();
@@ -128,7 +132,7 @@ document.getElementById("pausePlay").onclick = function () {
 document.getElementById("fsButton").onclick = function () {
 	this.blur();
 	buttonSound();
-	fullScreen();
+	goFullScreen();
 }
 document.getElementById("ssButton").onclick = function () {
 	this.blur();
@@ -136,27 +140,29 @@ document.getElementById("ssButton").onclick = function () {
 	download();
 }
 var keysDown = {};
-//key down
+// key down
 addEventListener("keydown", function (e) {
     switch(screen){
         case 3:
-	    switch(e.keyCode){
-	    case 80: case 179: pausePlay(); break;
-        case 81: download(); break;
-	    case 70: fullScreen(); break;
-	    case 77: screen1(); break;
-	    default :keysDown[e.keyCode] = true;
-        break;
-	    }
+        case 4:
+        case 2:
+        case 1:
+            switch(e.keyCode){
+                case 80: case 179: pausePlay(); break;
+                case 81: download(); break;
+                case 70: goFullScreen(); break;
+                case 77: screen1(); break;
+                default: keysDown[e.keyCode] = true;
+	       }
     }
 }, true);
-//key up
+// key up
 addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, true);
 // contextmenu
 //document.addEventListener("contextmenu", function(e) {e.preventDefault();}, true);
-//touch start
+// touch start
 document.querySelector("canvas").addEventListener("touchstart",  function(e) {
 	e.preventDefault();
     switch(screen){
@@ -188,7 +194,7 @@ document.querySelector("canvas").addEventListener("touchstart",  function(e) {
         break;
     }
 }, true);
-//touch move
+// touch move
 document.querySelector("canvas").addEventListener("touchmove", function(e) {
     e.preventDefault();
     switch(screen){
@@ -236,7 +242,7 @@ document.querySelector("canvas").addEventListener("touchmove", function(e) {
         break;
 	}
 }, true);
-//touch end
+// touch end
 document.querySelector("canvas").addEventListener("touchend", function(e){
 	e.preventDefault();
     switch(screen){
@@ -270,12 +276,12 @@ document.querySelector("canvas").addEventListener("touchend", function(e){
         break;
     }
 }, true);
-	document.body.onresize=function(){
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight-40;
-		marquee.style.width = (window.innerWidth-380)+"px";
-		widthFactor = canvas.width*0.001;
-	}
+document.body.onresize=function(){
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight-40;
+	marquee.style.width = (window.innerWidth-380)+"px";
+	widthFactor = canvas.width*0.001;
+}
 document.querySelector("canvas").addEventListener("click", function(event) {
     switch(screen){
         case 1:
@@ -289,12 +295,12 @@ document.querySelector("canvas").addEventListener("click", function(event) {
             hShots[s] = {};
             hShots[s].x = hero.x+13;
             hShots[s].y = hero.y+2;
-		    var x = event.clientX;
-		    var y = event.clientY-50;
+            var X = hShots[s].x-event.clientX;
+            var Y = hShots[s].y-event.clientY+(fullScreen?20:40);
 	        var speed = 300*widthFactor;
-            var denom = (Math.sqrt((hShots[s].x-x)*(hShots[s].x-x)+(hShots[s].y-y)*(hShots[s].y-y))/speed);
-            hShots[s].movementX = (x-hShots[s].x)/denom;
-            hShots[s].movementY = (y+8-hShots[s].y)/denom;
+            var denom = Math.sqrt(X*X+Y*Y)/speed;
+            hShots[s].movementX = -X/denom;
+            hShots[s].movementY = -Y/denom;
 		    hero.shots--;
 	    }
         break;
@@ -304,6 +310,10 @@ document.querySelector("canvas").addEventListener("click", function(event) {
         break;
     }
 }, true);
+document.onwebkitfullscreenchange=function(){fullScreen=false}
+document.onmozfullscreenchange=function(){fullScreen=false}
+document.onmsfullscreenchange=function(){fullScreen=false}
+document.onfullscreenchange=function(){fullScreen=false}
 var paused = false;
 var loadedItems=0;
 var canvas = document.querySelector("canvas");
@@ -313,7 +323,11 @@ marquee.style.width = (window.innerWidth-380)+"px";
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight-40;
 var mobile = false;
-if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMoble|WindowsPhone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)) {
+if(
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMoble|WindowsPhone|Kindle|Silk|Opera Mini/i.test(
+        navigator.userAgent
+    )
+) {
 	mobile = true;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////load game graphics
@@ -356,41 +370,50 @@ var mShots=[];
 var hShots = [];
 var modifier;
 var shield = 196;
-var hero = {speed: 200, isDieing: false, image:0, shots:0};
+var hero = {speed: 200, isDieing: false, image:0, shots:2};
 var nav = {isVisible: false, x:0, y:0};
 var monsters = [];
 var introMonsters = [];
 var monstersCaught = 0;
-var widthFactor = canvas.width*0.001;
+var widthFactor = canvas.width * 0.001;
 
 // init high score
 if(!getItem("highScore")) {highScore = 0;}
 else highScore = getItem("highScore");
-var debug;
-///////////////////////////////////////////////////////////////////////////////////////////////////////// new monster
+/////////////////////////////////////////////////////////////////////////////////////////////// new monster
 function monsterIntro(){
     var i = introMonsters.length;
-	var destX = (Math.random() * (canvas.width - 64));
-	var destY = (Math.random() * (canvas.height - 64));
-    var x, y;
-    var speed = 1000*widthFactor;
-	while((destX+90)>hero.x && destX < (hero.x+90) && (destY+90)>hero.y && destY < (hero.y+90) ){
-		destX = (Math.random() * (canvas.width - 64));
-		destY = (Math.random() * (canvas.height - 64));
+    introMonsters[i] = {};
+	introMonsters[i].destX = Math.random() * (canvas.width - 64);
+	introMonsters[i].destY = Math.random() * (canvas.height - 64);
+    //var x, y;
+    var speed = 1000 * widthFactor;
+	while(
+        (introMonsters[i].destX+90) > hero.x
+        && introMonsters[i].destX < (hero.x+90)
+        && (introMonsters[i].destY+90) > hero.y
+        && introMonsters[i].destY < (hero.y+90)
+    ){
+		introMonsters[i].destX = Math.random() * (canvas.width - 64);
+		introMonsters[i].destY = Math.random() * (canvas.height - 64);
 	}
-    if(destX < (canvas.width*0.5)) x = 0;
-    else x = canvas.width-64;
-    if(destY < (canvas.height*0.5)) y = 0;
-    else y = canvas.height-64;
-	introMonsters[i] = {};
-	introMonsters[i].destX = destX;
-	introMonsters[i].destY = destY;
-    introMonsters[i].x = x;
-    introMonsters[i].y = y;
-    introMonsters[i].movementX = (destX+32-x)/(Math.sqrt((x-destX+32)*(x-destX+32)+(y-destY+32)*(y-destY+32))/speed);
-    introMonsters[i].movementY = (destY+32-y)/(Math.sqrt((x-destX+32)*(x-destX+32)+(y-destY+32)*(y-destY+32))/speed);
-	introMonsters[i].image=Math.floor((Math.random() * 2));
-    debug = introMonsters[i];
+    
+    if (introMonsters[i].destX < (canvas.width * 0.5)){
+        introMonsters[i].x = 0;
+    } else {
+        introMonsters[i].x = canvas.width-64;
+    }
+    if (introMonsters[i].destY < (canvas.height * 0.5)){
+        introMonsters[i].y = 0;
+    } else {
+        introMonsters[i].y = canvas.height-64;
+    }
+    var X = introMonsters[i].x - introMonsters[i].destX+32;
+    var Y = introMonsters[i].y - introMonsters[i].destY+32;
+    var denom = Math.sqrt(X*X+Y*Y)/speed;
+    introMonsters[i].movementX = -X/denom;
+    introMonsters[i].movementY = -Y/denom;
+	introMonsters[i].image = Math.floor((Math.random() * 2));
 }
 setInterval(monsterAddIn,4000);
 function monsterAddIn(){
@@ -483,36 +506,38 @@ function update() {
             monsters[n].image = monster.image;
         }
     }
-	chance-=(0.0000000000023*modifier);
-	if(Math.random()>chance) monsterIntro(); 
+	chance-=(0.0000000000023 * modifier);
+	if(Math.random() > chance) monsterIntro(); 
 	wavingHand+=modifier;
-	if(wavingHand>0.05) {wavingHand = 0;}
+	if(wavingHand > 0.05) {wavingHand = 0;}
 	explosion+=modifier;
-	if(explosion>0.03) {explosion = 0;}
+	if(explosion > 0.03) {explosion = 0;}
 	for(i in monsters){
         if(monsters[i].shoot){
-            if(Math.random() > 0.994){
+            if(Math.random() > 0.994){ // monster shoots
                 var s = mShots.length;
                 mShots[s] = {};
                 mShots[s].x = monsters[i].x+47;
                 mShots[s].y = monsters[i].y+2;
 	            var speed = 100*widthFactor;
-                var denom = Math.sqrt((mShots[s].x-hero.x+32)*(mShots[s].x-hero.x+32)+(mShots[s].y-hero.y+32)*(mShots[s].y-hero.y+32))/speed;
-                mShots[s].movementX = (hero.x+32-mShots[s].x)/denom;
-                mShots[s].movementY = (hero.y+32-mShots[s].y)/denom;
+                var X = mShots[s].x-hero.x-32;
+                var Y = mShots[s].y-hero.y-32;
+                var denom = Math.sqrt(X*X+Y*Y)/speed;
+                mShots[s].movementX = -X/denom;
+                mShots[s].movementY = -Y/denom;
 	        }
 	        // where is the moster going?
-	        if(Math.random()>0.95){ // if true the monster will change direction
-		        monsters[i].movementY=((Math.random() * 200)-99)*widthFactor;
-		        monsters[i].movementX=((Math.random() * 200)-99)*widthFactor;
+	        if(Math.random() > 0.95){ // if true the monster will change direction
+		        monsters[i].movementY = ((Math.random() * 200) - 99) * widthFactor;
+		        monsters[i].movementX = ((Math.random() * 200) - 99) * widthFactor;
 	        }
         } else {
-            var speed = 120*widthFactor;
-            var x = monsters[i].x
-            var y = monsters[i].y
-            var denom = Math.sqrt((x-hero.x+32)*(x-hero.x+32)+(y-hero.y+32)*(y-hero.y+32))/speed;
-            monsters[i].movementX = (hero.x+32-x)/denom;
-            monsters[i].movementY = (hero.y+32-y)/denom;    
+            var speed = 120 * widthFactor;
+            var X = monsters[i].x - hero.x-32;
+            var Y = monsters[i].y - hero.y-32;
+            var denom = Math.sqrt(X*X+Y*Y)/speed;
+            monsters[i].movementX = -X/denom;
+            monsters[i].movementY = -Y/denom;
         }
 	    // move the monster
 	    monsters[i].x += monsters[i].movementX*modifier;
@@ -523,7 +548,13 @@ function update() {
 	    if(monsters[i].y > canvas.height-64)monsters[i].y=canvas.height-64;
 	    if(monsters[i].y < 0)monsters[i].y=0;
 	    for(n in hShots){
-		    if(monsters[i].x<hShots[n].x+2 && monsters[i].x+64>hShots[n].x+2 && monsters[i].y<hShots[n].y+2 && monsters[i].y+64>hShots[n].y+2 && monsters[i].image < 2){
+		    if(
+                monsters[i].x < hShots[n].x+2
+                && monsters[i].x+64 > hShots[n].x+2
+                && monsters[i].y < hShots[n].y+2
+                && monsters[i].y+64 > hShots[n].y+2
+                && monsters[i].image < 2
+            ){
                 hero.shots++;
 		        ++monstersCaught;
 		        explosionSound();
@@ -597,7 +628,7 @@ function render() {
 var bgX=0, bgY=0, phase=1, screen=1, then = 0.001;
 
 // Cross-browser support for requestAnimationFrame
-var w = window;
+var w = window;w.
 requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
 
 function screen1(){
@@ -692,7 +723,7 @@ function screen3() {
 	hero.y = canvas.height / 2-32;
     hero.image = 0;
 	hero.isDieing = false;
-    hero.shots = 0;
+    hero.shots = 2;
     monstersCaught = 0;
 	hShots = [];
 	mShots = [];
@@ -780,7 +811,7 @@ function download() { // screen shot
     }
 }
 
-function fullScreen() { // fullscreen
+function goFullScreen() { // fullscreen
 	if (canvas.requestFullscreen) {
 		canvas.requestFullscreen();
 	} else if (canvas.webkitRequestFullscreen) {
@@ -790,6 +821,7 @@ function fullScreen() { // fullscreen
 	} else if (canvas.msRequestFullscreen) {
 		canvas.msRequestFullscreen();
 	}
+    fullScreen=true;
 }
 
 //play sounds
@@ -816,7 +848,7 @@ function pausePlay() { // play/pause
 	}
 	else{
 		notify("Spashal is paused. To unpause press the play button or press P on your keyboard.");
-        TML="PLAY"; 
+        document.getElementById("pausePlay").innerHTML="PLAY"; 
 		paused=true;
 	}
 }
@@ -839,12 +871,12 @@ function autoShoot(){ // auto shoot used for mobile
         hShots[s] = {};
         hShots[s].x = hero.x+13;
         hShots[s].y = hero.y+2;
-		var x = monsters[m].x+32;
-		var y = monsters[m].y+32;
 	    var speed = 350*widthFactor;
-        var denom = (Math.sqrt((hShots[s].x-x)*(hShots[s].x-x)+(hShots[s].y-y)*(hShots[s].y-y))/speed);
-        hShots[s].movementX = (x-hShots[s].x)/denom;
-        hShots[s].movementY = (y+8-hShots[s].y)/denom;
+        var X = hShots[s].x-monsters[m].x+32;
+        var Y = hShots[s].y-monsters[m].y+32;
+        var denom = Math.sqrt(X*X+Y*Y)/speed;
+        hShots[s].movementX = -X/denom;
+        hShots[s].movementY = -Y/denom;
 		hero.shots--;
 		}
 	}
@@ -856,7 +888,7 @@ function getItem(item){ // get item
 	}
 	else return "";
     /**
-     *Bellow code used in chrome app
+     * Bellow code used in chrome app
      */
     //    chrome.storage.sync.get(item, function(items) {
 	//	if(items.highScore) highScore = items.highScore;
@@ -868,7 +900,7 @@ function setItem(item, val){ // set item
 		localStorage.setItem(item, val);
 	}
     /**
-     *Bellow code used in chrome app
+     * Bellow code used in chrome app
      */
     //chrome.storage.sync.set({"highScore": val}, function() {});
 }
